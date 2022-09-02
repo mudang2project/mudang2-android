@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">가천대 무당이</string>
+    <string name="wait_number">대기 인원수(정문)</string>
+    <string name="weather">복정동 날씨</string>
 </resources>
