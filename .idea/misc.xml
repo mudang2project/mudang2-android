@@ -4,9 +4,15 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.206" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/drawable/ic_board_selector.xml" value="0.1505" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/drawable/ic_home_selector.xml" value="0.1505" />
         <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/drawable/ic_launcher_background.xml" value="0.206" />
-        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/activity_main.xml" value="0.24947916666666667" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/activity_home.xml" value="0.20478837109876016" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/activity_main.xml" value="0.2" />
         <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/activity_splash.xml" value="0.2933727311101731" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/fragment_board.xml" value="0.20478837109876016" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/layout/fragment_home.xml" value="0.19281744335185977" />
+        <entry key="..\:/Users/lsh92/AndroidStudioProjects/mudang2/app/src/main/res/menu/bottom_menu.xml" value="0.20478837109876016" />
       </map>
     </option>
   </component>
