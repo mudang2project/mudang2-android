@@ -21,7 +21,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyByQWMSdLkucWwlRcMDisHlw-m0LOCcrKA" />
         <activity
-            android:name=".SplashActivity"
+            android:name=".layout.SplashActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".layout.MainActivity"
             android:exported="true" />
     </application>
 

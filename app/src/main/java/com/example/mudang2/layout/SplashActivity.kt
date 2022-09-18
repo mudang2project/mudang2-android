@@ -1,4 +1,4 @@
-package com.example.mudang2
+package com.example.mudang2.layout
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
