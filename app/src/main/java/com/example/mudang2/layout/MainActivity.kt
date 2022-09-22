@@ -25,13 +25,14 @@ import java.util.*
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMainBinding
     private lateinit var mMap: GoogleMap
+
     private var temp: String? = null // 온도 ex)26
     private var baseTime: String? = null
     private var tmpIdx: Int? = null
     private var skyIdx: Int? = null
     private var ptyIdx: Int? = null
+    private var todayDate: String? = null
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -40,18 +41,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        val todayDate = getCurrentDate()
         var currentHour = getCurrentHour()
 
         if (currentHour[0] == '0') { // 현재 시각이 오전일 때
             currentHour = currentHour.replace("0","")
             Log.d("HOUR", currentHour)
         }
+
+        if (currentHour.toInt() <= 2) { // 0, 1, 2
+            getCurrentDate(1) // 정각, 새벽 1시, 새벽 2시는 어제 데이터 받아옴
+        } else {
+            getCurrentDate(0)
+        }
+
         // baseTime 세팅
         setBaseTime(currentHour.toInt())
 
         weatherStatus("JSON", 36, 1,
-            todayDate, baseTime!!, 62, 124)
+            todayDate!!, baseTime!!, 62, 124)
         // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
         // API 제공 시간(~이후) : 02:10, 05:10, 08:10, 11:10, 14:10, 17:10, 20:10, 23:10
     }
@@ -121,10 +128,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     // 현재 날짜 불러오기
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun getCurrentDate(): String{
-        val localDate: LocalDate = LocalDate.now()
-        return localDate.toString().replace("-","") // 현재 날짜 파싱
+    private fun getCurrentDate(beforeDay: Int) {
+        val cal = Calendar.getInstance()
+        val year = cal.get(Calendar.YEAR).toString()
+        val month = (cal.get(Calendar.MONTH) + 1).toString()
+        val day = (cal.get(Calendar.DATE) - beforeDay).toString()
+
+        todayDate = if (month.toInt() <= 9)
+            year + "0" + month + day
+        else
+            year + month + day
     }
 
     // 현재 시각 불러오기
@@ -136,19 +149,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setBaseTime(hour: Int){
         when(hour) {
             0 -> {
-                baseTime = "2300"
+                baseTime = "2300" // 어제 날짜
                 tmpIdx = 0
                 skyIdx = 5
                 ptyIdx = 6
             }
             1 -> {
-                baseTime = "2300"
+                baseTime = "2300" // 어제 날짜
                 tmpIdx = 12
                 skyIdx = 17
                 ptyIdx = 18
             }
             2 -> {
-                baseTime = "2300"
+                baseTime = "2300" // 어제 날짜
                 tmpIdx = 24
                 skyIdx = 29
                 ptyIdx = 30
