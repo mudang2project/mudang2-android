@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class NetworkModule {
     private var retrofit: Retrofit? = null
-    val gson : Gson = GsonBuilder()
+    private val gson : Gson = GsonBuilder()
         .setLenient()
         .create()
 

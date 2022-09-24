@@ -41,26 +41,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        var currentHour = getCurrentHour()
-
-        if (currentHour[0] == '0') { // 현재 시각이 오전일 때
-            currentHour = currentHour.replace("0","")
-            Log.d("HOUR", currentHour)
-        }
-
-        if (currentHour.toInt() <= 2) { // 0, 1, 2
-            getCurrentDate(1) // 정각, 새벽 1시, 새벽 2시는 어제 데이터 받아옴
-        } else {
-            getCurrentDate(0)
-        }
-
-        // baseTime 세팅
-        setBaseTime(currentHour.toInt())
+        setHourDate()
 
         weatherStatus("JSON", 36, 1,
             todayDate!!, baseTime!!, 62, 124)
         // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
-        // API 제공 시간(~이후) : 02:10, 05:10, 08:10, 11:10, 14:10, 17:10, 20:10, 23:10
     }
 
     // 구글맵 API
@@ -112,7 +97,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         else -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_rain) // 3일 때 눈
                     }
 
-                    Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[tmpIdx!!].toString()) // SKY // 5 17 29
+                    Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[tmpIdx!!].toString()) // SKY // 0  5  6
                     Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[skyIdx!!].toString()) // SKY // 5 17 29
                     Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[ptyIdx!!].toString()) // PTY // 6 18 30
 
@@ -127,6 +112,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             })
     }
 
+    private fun setHourDate() {
+        var currentHour = getCurrentHour()
+
+        if (currentHour[0] == '0') { // 현재 시각이 오전일 때
+            currentHour = currentHour[1].toString()
+            Log.d("HOUR", currentHour)
+        }
+
+        if (currentHour.toInt() <= 2) // 0, 1, 2
+            getCurrentDate(1) // 정각, 새벽 1시, 새벽 2시는 어제 데이터 받아옴
+        else
+            getCurrentDate(0)
+
+        // baseTime 세팅
+        setBaseTime(currentHour.toInt())
+    }
+
+    // 현재 시각 불러오기
+    private fun getCurrentHour(): String{
+        val formatter = SimpleDateFormat("HH", Locale.getDefault())
+        return formatter.format(Calendar.getInstance().time)
+    }
+
     // 현재 날짜 불러오기
     private fun getCurrentDate(beforeDay: Int) {
         val cal = Calendar.getInstance()
@@ -138,12 +146,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             year + "0" + month + day
         else
             year + month + day
-    }
-
-    // 현재 시각 불러오기
-    private fun getCurrentHour(): String{
-        val formatter = SimpleDateFormat("HH", Locale.getDefault())
-        return formatter.format(Calendar.getInstance().time)
     }
 
     private fun setBaseTime(hour: Int){
