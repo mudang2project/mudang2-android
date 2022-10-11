@@ -8,15 +8,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class NetworkModule {
     private var retrofit: Retrofit? = null
-    private val gson : Gson = GsonBuilder()
-        .setLenient()
-        .create()
+    private val gson : Gson = GsonBuilder().setLenient().create()
 
     fun getRetrofit(): Retrofit? {
         if (retrofit == null) {
             synchronized(this) {
                 retrofit = Retrofit.Builder().baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create(gson)).build()
+                    .addConverterFactory(GsonConverterFactory.create(gson))
+                    .build()
             }
         }
         return retrofit

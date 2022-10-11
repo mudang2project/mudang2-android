@@ -1,10 +1,9 @@
 package com.example.mudang2.layout
 
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import com.example.mudang2.R
 import com.example.mudang2.databinding.ActivityMainBinding
 import com.example.mudang2.remote.NetworkModule
@@ -15,16 +14,24 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.util.*
+
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMainBinding
     private lateinit var mMap: GoogleMap
+
+    private val database = Firebase.database // firebase 선언 초기화
+    private val myRef = database.getReference("Camera")
 
     private var temp: String? = null // 온도 ex)26
     private var baseTime: String? = null
@@ -38,16 +45,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        getPeopleCnt() // 대기인원 파이어베이스 리스너
+
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         setHourDate()
 
-        weatherStatus("JSON", 36, 1,
-            todayDate!!, baseTime!!, 62, 124)
+        weatherStatus(
+            "JSON", 36, 1,
+            todayDate!!, baseTime!!, 62, 124
+        )
         // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
-    }
 
+    }
     // 구글맵 API
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -55,7 +66,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         // 학교 초기 위치 설정
         val latLng = LatLng(37.4525, 127.1312)
         // 무당이 위치 마커 표시
-//      mMap.addMarker(MarkerOptions().position(latLng).title("가천대학교"))
+//        mMap.addMarker(MarkerOptions().position(latLng).title("가천대학교"))
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
     }
@@ -70,7 +81,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         nx: Int,
         ny: Int
     ) {
-
         val getWeatherService = NetworkModule().getRetrofit()?.create(WeatherApi::class.java)
 
         getWeatherService?.getWeather(dataType, numOfRows, pageNo, baseData, baseTime, nx, ny)
@@ -89,12 +99,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     } else {
                         binding.homeWeatherImageIv.setImageResource(R.drawable.ic_cloud) // 3, 4일 때 흐림
                     }
-
                     // 비, 눈 바인딩
                     when (response.body()?.response!!.body.items.item[ptyIdx!!].fcstValue) {
                         "0" -> null
                         "3" -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_snow) // 3일 때 눈
-                        else -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_rain) // 3일 때 눈
+                        else -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_rain) // 1, 2, 4 일 때 눈
                     }
 
                     Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[tmpIdx!!].toString()) // SKY // 0  5  6
@@ -111,41 +120,76 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             })
     }
-
+    // 가져올 데이터의 날짜 선택
     private fun setHourDate() {
         var currentHour = getCurrentHour()
 
         if (currentHour[0] == '0') { // 현재 시각이 오전일 때
-            currentHour = currentHour[1].toString()
+            currentHour = currentHour[1].toString() // 0 제거
             Log.d("HOUR", currentHour)
         }
-
         if (currentHour.toInt() <= 2) // 0, 1, 2
             getCurrentDate(1) // 정각, 새벽 1시, 새벽 2시는 어제 데이터 받아옴
         else
             getCurrentDate(0)
-
         // baseTime 세팅
         setBaseTime(currentHour.toInt())
+        Log.d("TESTTEST", currentHour)
     }
-
     // 현재 시각 불러오기
     private fun getCurrentHour(): String{
-        val formatter = SimpleDateFormat("HH", Locale.getDefault())
+        val formatter = SimpleDateFormat("HH", Locale.getDefault()) // 00 01 ... 23
         return formatter.format(Calendar.getInstance().time)
     }
-
     // 현재 날짜 불러오기
     private fun getCurrentDate(beforeDay: Int) {
         val cal = Calendar.getInstance()
-        val year = cal.get(Calendar.YEAR).toString()
-        val month = (cal.get(Calendar.MONTH) + 1).toString()
-        val day = (cal.get(Calendar.DATE) - beforeDay).toString()
+        var year = cal.get(Calendar.YEAR).toString()
+        var month = (cal.get(Calendar.MONTH) + 1).toString() // 0부터 시작해서 +1
+        var day = (cal.get(Calendar.DATE) - beforeDay).toString()
 
-        todayDate = if (month.toInt() <= 9)
-            year + "0" + month + day
-        else
-            year + month + day
+        if (month.toInt() <= 9)
+            month = "0$month"
+
+        if (day.toInt() <= 9)
+            day = "0$day"
+
+        todayDate = year + month + day
+
+        Log.d("TESTTEST", todayDate.toString())
+    }
+
+    // 파이어베이스에 있는 사람 수 가져오기
+    private fun getPeopleCnt(){
+        var cnt: Long
+        myRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    for (data in snapshot.children) {
+                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
+                        binding.homeWaitNumberTv.text = "${data.value.toString()}명"
+                        
+                        cnt = data.value as Long
+                        if (cnt <= 5) {
+                            binding.homeWaitConditionTv.text = "원활"
+                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#04D900"))
+
+                        }
+                        else if (cnt in 6..15) {
+                            binding.homeWaitConditionTv.text = "보통"
+                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF9110"))
+                        }
+                        else {
+                            binding.homeWaitConditionTv.text = "혼잡"
+                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF0000"))
+                        }
+                   }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FIREBASE", error.toString())
+            }
+        })
     }
 
     private fun setBaseTime(hour: Int){

@@ -13,4 +13,8 @@
     <color name="background">#CFEEFF</color>
     <color name="gachon">#004E96</color>
     <color name="bottom_icon">#35B8FF</color>
+
+    <color name="smoothly">#04D900</color>
+    <color name="normal">#FF8A00</color>
+    <color name="confusion">#FF0000</color>
 </resources>
