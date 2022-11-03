@@ -13,7 +13,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolylineOptions
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -31,7 +34,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
 
     private val database = Firebase.database // firebase 선언 초기화
-    private val myRef = database.getReference("Camera")
+    private val cameraRef = database.getReference("Camera")
+    private val gpsRef = database.getReference("GPS")
 
     private var temp: String? = null // 온도 ex)26
     private var baseTime: String? = null
@@ -46,7 +50,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         setContentView(binding.root)
 
         getPeopleCnt() // 대기인원 파이어베이스 리스너
-
+        getLocate() // gps 파이어베이스 리스너
+        
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
@@ -65,8 +70,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // 학교 초기 위치 설정
         val latLng = LatLng(37.4525, 127.1312)
-        // 무당이 위치 마커 표시
-//        mMap.addMarker(MarkerOptions().position(latLng).title("가천대학교"))
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
     }
@@ -136,11 +139,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         setBaseTime(currentHour.toInt())
         Log.d("TESTTEST", currentHour)
     }
+
     // 현재 시각 불러오기
     private fun getCurrentHour(): String{
         val formatter = SimpleDateFormat("HH", Locale.getDefault()) // 00 01 ... 23
         return formatter.format(Calendar.getInstance().time)
     }
+
     // 현재 날짜 불러오기
     private fun getCurrentDate(beforeDay: Int) {
         val cal = Calendar.getInstance()
@@ -159,23 +164,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.d("TESTTEST", todayDate.toString())
     }
 
-    // 파이어베이스에 있는 사람 수 가져오기
-    private fun getPeopleCnt(){
-        var cnt: Long
-        myRef.addValueEventListener(object : ValueEventListener {
+    // 파이어베이스에 저장된 사람 수 가져오기
+    private fun getPeopleCnt() {
+        var cnt: String
+
+        cameraRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     for (data in snapshot.children) {
                         Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
                         binding.homeWaitNumberTv.text = "${data.value.toString()}명"
-                        
-                        cnt = data.value as Long
-                        if (cnt <= 5) {
+
+                        cnt = data.value.toString()
+
+                        if (cnt.toInt() <= 5) {
                             binding.homeWaitConditionTv.text = "원활"
                             binding.homeWaitConditionTv.setTextColor(Color.parseColor("#04D900"))
-
                         }
-                        else if (cnt in 6..15) {
+                        else if (cnt.toInt() in 6..15) {
                             binding.homeWaitConditionTv.text = "보통"
                             binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF9110"))
                         }
@@ -184,6 +190,55 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                             binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF0000"))
                         }
                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FIREBASE", error.toString())
+            }
+        })
+    }
+
+    // 파이어베이스에 저장된 무당이 위치 가져오기
+    private fun getLocate() {
+        gpsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    for (data in snapshot.children) {
+                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
+                        val locate = data.value.toString().split(" ")
+                        val lat = locate[0].toDouble()
+                        val long = locate[1].toDouble()
+
+                        mMap.clear()
+
+                        val polyline = mMap.addPolyline(PolylineOptions()
+                            .clickable(false)
+                            .add(
+                                LatLng(37.4519, 127.1312),
+                                LatLng(37.4526, 127.1307),
+                                LatLng(37.4526, 127.1305),
+                                LatLng(37.4525, 127.1300),
+                                LatLng(37.4521, 127.1295),
+                                LatLng(37.4517, 127.1275),
+                                LatLng(37.4506, 127.1275),
+                                LatLng(37.4499, 127.1299),
+                                LatLng(37.4509, 127.1303),
+                                LatLng(37.4512, 127.1308),
+                                LatLng(37.4522, 127.1314),
+                                LatLng(37.4524, 127.1319),
+                                LatLng(37.4531, 127.1336),
+                                LatLng(37.4535, 127.1342),
+                                LatLng(37.4536, 127.1345),
+                                LatLng(37.4537, 127.1347),
+                                LatLng(37.4541, 127.1348),
+                                LatLng(37.4555, 127.1347)
+                            ))
+                        polyline.color = -0x1110000
+                        polyline.tag = "route"
+
+                        mMap.addMarker(MarkerOptions().position(LatLng(lat, long)))!!.setIcon(
+                            BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
+                    }
                 }
             }
             override fun onCancelled(error: DatabaseError) {
