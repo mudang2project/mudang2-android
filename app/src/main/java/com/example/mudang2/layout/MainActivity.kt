@@ -1,9 +1,18 @@
 package com.example.mudang2.layout
 
+import android.content.Context
 import android.graphics.Color
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Transformations.map
 import com.example.mudang2.R
 import com.example.mudang2.databinding.ActivityMainBinding
 import com.example.mudang2.remote.NetworkModule
@@ -13,10 +22,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -27,15 +33,20 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.system.exitProcess
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMainBinding
     private lateinit var mMap: GoogleMap
+    private var nowTime: Int? = null
 
     private val database = Firebase.database // firebase 선언 초기화
     private val cameraRef = database.getReference("Camera")
-    private val gpsRef = database.getReference("GPS")
+    private val gps1Ref = database.getReference("GPS1")
+    private val gps2Ref = database.getReference("GPS2")
+    private val gps3Ref = database.getReference("GPS3")
+    private val gps4Ref = database.getReference("GPS4")
 
     private var temp: String? = null // 온도 ex)26
     private var baseTime: String? = null
@@ -44,17 +55,30 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private var ptyIdx: Int? = null
     private var todayDate: String? = null
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        getPeopleCnt() // 대기인원 파이어베이스 리스너
-        getLocate() // gps 파이어베이스 리스너
-        
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        val display = this.applicationContext?.resources?.displayMetrics
+        val deviceWidth = display?.widthPixels
+        val deviceHeight = display?.heightPixels
 
+        if(!isNetworkAvailable(this)){
+            val networkErrorDialog = NetworkErrorDialog(deviceWidth!!, deviceHeight!!)
+            networkErrorDialog.show(this.supportFragmentManager, "error")
+        }
+
+        getPeopleCnt() // 대기인원 파이어베이스 리스너
+        getLocate1() // gps 파이어베이스 리스너
+        getLocate2() // gps 파이어베이스 리스너
+        getLocate3() // gps 파이어베이스 리스너
+        getLocate4() // gps 파이어베이스 리스너
+        
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.home_map) as SupportMapFragment
+        mapFragment.getMapAsync(this)
         setHourDate()
 
         weatherStatus(
@@ -63,6 +87,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         )
         // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
 
+        // 운행시간 외 CLOSED 페이지 띄우기기
+       if (nowTime !in 8..18) {
+            binding.homeClosedPageCl.visibility = View.VISIBLE
+        }
+    }
+
+    private fun isNetworkAvailable(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val nw      = connectivityManager.activeNetwork ?: return false
+            val actNw = connectivityManager.getNetworkCapabilities(nw) ?: return false
+
+            return when {
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+                //for other device how are able to connect with Ethernet
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+                //for check internet over Bluetooth
+                actNw.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> true
+                else -> false
+            }
+        } else {
+            return connectivityManager.activeNetworkInfo?.isConnected ?: false
+        }
     }
     // 구글맵 API
     override fun onMapReady(googleMap: GoogleMap) {
@@ -72,6 +121,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val latLng = LatLng(37.4525, 127.1312)
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
+
+        val polyline = mMap.addPolyline(PolylineOptions()
+            .clickable(false)
+            .add(
+                LatLng(37.4519, 127.1312),
+                LatLng(37.4526, 127.1307),
+                LatLng(37.4526, 127.1305),
+                LatLng(37.4525, 127.1300),
+                LatLng(37.4521, 127.1295),
+                LatLng(37.4517, 127.1275),
+                LatLng(37.4506, 127.1275),
+                LatLng(37.4499, 127.1299),
+                LatLng(37.4509, 127.1303),
+                LatLng(37.4512, 127.1308),
+                LatLng(37.4522, 127.1314),
+                LatLng(37.4524, 127.1319),
+                LatLng(37.4531, 127.1336),
+                LatLng(37.4535, 127.1342),
+                LatLng(37.4536, 127.1345),
+                LatLng(37.4537, 127.1347),
+                LatLng(37.4541, 127.1348),
+                LatLng(37.4555, 127.1347)
+            ))
+        polyline.color = -0x1110000
+        polyline.tag = "route"
     }
 
     // 날씨 연동 API
@@ -131,6 +205,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             currentHour = currentHour[1].toString() // 0 제거
             Log.d("HOUR", currentHour)
         }
+
+        nowTime = currentHour.toInt()
+
         if (currentHour.toInt() <= 2) // 0, 1, 2
             getCurrentDate(1) // 정각, 새벽 1시, 새벽 2시는 어제 데이터 받아옴
         else
@@ -199,45 +276,93 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     // 파이어베이스에 저장된 무당이 위치 가져오기
-    private fun getLocate() {
-        gpsRef.addValueEventListener(object : ValueEventListener {
+    private var marker1 : Marker? = null
+    private fun getLocate1() {
+        gps1Ref.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
+                    if (marker1 != null)
+                        marker1!!.remove()
                     for (data in snapshot.children) {
                         Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
                         val locate = data.value.toString().split(" ")
-                        val lat = locate[0].toDouble()
-                        val long = locate[1].toDouble()
+                        var lat1 = locate[0].toDouble()
+                        var long1 = locate[1].toDouble()
 
-                        mMap.clear()
+                        marker1 = mMap.addMarker(MarkerOptions().position(LatLng(lat1, long1)))!!
+                        marker1!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FIREBASE", error.toString())
+            }
+        })
+    }
 
-                        val polyline = mMap.addPolyline(PolylineOptions()
-                            .clickable(false)
-                            .add(
-                                LatLng(37.4519, 127.1312),
-                                LatLng(37.4526, 127.1307),
-                                LatLng(37.4526, 127.1305),
-                                LatLng(37.4525, 127.1300),
-                                LatLng(37.4521, 127.1295),
-                                LatLng(37.4517, 127.1275),
-                                LatLng(37.4506, 127.1275),
-                                LatLng(37.4499, 127.1299),
-                                LatLng(37.4509, 127.1303),
-                                LatLng(37.4512, 127.1308),
-                                LatLng(37.4522, 127.1314),
-                                LatLng(37.4524, 127.1319),
-                                LatLng(37.4531, 127.1336),
-                                LatLng(37.4535, 127.1342),
-                                LatLng(37.4536, 127.1345),
-                                LatLng(37.4537, 127.1347),
-                                LatLng(37.4541, 127.1348),
-                                LatLng(37.4555, 127.1347)
-                            ))
-                        polyline.color = -0x1110000
-                        polyline.tag = "route"
+    private var marker2 : Marker? = null
+    private fun getLocate2() {
+        gps2Ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    if (marker2 != null)
+                        marker2!!.remove()
+                    for (data in snapshot.children) {
+                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
+                        val locate = data.value.toString().split(" ")
+                        var lat2 = locate[0].toDouble()
+                        var long2 = locate[1].toDouble()
 
-                        mMap.addMarker(MarkerOptions().position(LatLng(lat, long)))!!.setIcon(
-                            BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
+                        marker2 = mMap.addMarker(MarkerOptions().position(LatLng(lat2, long2)))!!
+                        marker2!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FIREBASE", error.toString())
+            }
+        })
+    }
+
+    private var marker3 : Marker? = null
+    private fun getLocate3() {
+        gps3Ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    if (marker3 != null)
+                        marker3!!.remove()
+                    for (data in snapshot.children) {
+                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
+                        val locate = data.value.toString().split(" ")
+                        var lat3 = locate[0].toDouble()
+                        var long3 = locate[1].toDouble()
+
+                        marker3 = mMap.addMarker(MarkerOptions().position(LatLng(lat3, long3)))!!
+                        marker3!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FIREBASE", error.toString())
+            }
+        })
+    }
+
+    private var marker4 : Marker? = null
+    private fun getLocate4() {
+        gps4Ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    if (marker4 != null)
+                        marker4!!.remove()
+                    for (data in snapshot.children) {
+                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
+                        val locate = data.value.toString().split(" ")
+                        var lat4 = locate[0].toDouble()
+                        var long4 = locate[1].toDouble()
+
+                        marker4 = mMap.addMarker(MarkerOptions().position(LatLng(lat4, long4)))!!
+                        marker4!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
                     }
                 }
             }
