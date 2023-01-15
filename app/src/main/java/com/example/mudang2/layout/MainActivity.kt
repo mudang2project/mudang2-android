@@ -1,18 +1,16 @@
 package com.example.mudang2.layout
 
 import android.content.Context
-import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.example.mudang2.R
 import com.example.mudang2.databinding.ActivityMainBinding
 import com.example.mudang2.remote.NetworkModule
 import com.example.mudang2.remote.camera.CameraResult
@@ -28,11 +26,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -64,38 +57,48 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val deviceWidth = display?.widthPixels
         val deviceHeight = display?.heightPixels
 
+        // 네트워크 에러 발생
         if(!isNetworkAvailable(this)){
             val networkErrorDialog = NetworkErrorDialog(deviceWidth!!, deviceHeight!!)
             networkErrorDialog.show(this.supportFragmentManager, "error")
         }
-        
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.home_map) as SupportMapFragment
+
+        // 구글맵 초기화
+        val mapFragment = supportFragmentManager.findFragmentById(com.example.mudang2.R.id.home_map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+//       // 운행시간 외 CLOSED 페이지 띄우기
+//       if (nowTime !in 8..18) {
+//            binding.homeClosedPageCl.visibility = View.VISIBLE
+//        }
+
+        // 시간 가져오기
         setHourDate()
 
+        // 기상청 api 연동 날씨 가져오기
+        // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
         weatherStatus(
             "JSON", 36, 1,
             todayDate!!, baseTime!!, 62, 124
         )
-        // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
 
-        // 운행시간 외 CLOSED 페이지 띄우기기
-       if (nowTime !in 8..18) {
-            binding.homeClosedPageCl.visibility = View.VISIBLE
-        }
-
+        // 정류장 대기인원 수 api 연동
         val getHeadcount = GetCameraHeadcountService()
         getHeadcount.setHeadcountView(this)
+        // GPS 위도, 경도 api 연동
+        val getGpsLocation = GetGpsLocationService()
+        getGpsLocation.setLocationView(this)
 
+        // 대기인원 수 호출 쓰레드
         thread(start = true) {
             while(true) {
                 getHeadcount.getHeadcount()
                 Thread.sleep(10000)
             }
         }
-
     }
 
+    // 네트워크 확인 함수
     private fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
@@ -116,6 +119,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
             return connectivityManager.activeNetworkInfo?.isConnected ?: false
         }
     }
+
     // 구글맵 API
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -124,6 +128,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val latLng = LatLng(37.4525, 127.1312)
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
+
+        // 비트맵 아이콘 크기 조절
+        val bitmapDraw = resources.getDrawable(com.example.mudang2.R.drawable.ic_bus_1) as BitmapDrawable
+        val b = bitmapDraw.bitmap
+        val smallMarker = Bitmap.createScaledBitmap(b, 60, 100, false)
+
+        var marker1 : Marker = mMap.addMarker(MarkerOptions().position(LatLng(37.4519, 127.1312)))!!
+        marker1!!.setIcon(BitmapDescriptorFactory.fromBitmap(smallMarker))
 
         val polyline = mMap.addPolyline(PolylineOptions()
             .clickable(false)
@@ -147,7 +159,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
                 LatLng(37.4541, 127.1348),
                 LatLng(37.4555, 127.1347)
             ))
-        polyline.color = -0x1110000
+        polyline.color = -0x009999
         polyline.tag = "route"
     }
 
@@ -176,15 +188,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
 
                     // 맑음, 흐림 바인딩
                     if (response.body()?.response!!.body.items.item[skyIdx!!].fcstValue == "1") {
-                        binding.homeWeatherImageIv.setImageResource(R.drawable.ic_sun) // 1일 때 맑음
+                        binding.homeWeatherImageIv.setImageResource(com.example.mudang2.R.drawable.ic_sun) // 1일 때 맑음
                     } else {
-                        binding.homeWeatherImageIv.setImageResource(R.drawable.ic_cloud) // 3, 4일 때 흐림
+                        binding.homeWeatherImageIv.setImageResource(com.example.mudang2.R.drawable.ic_cloud) // 3, 4일 때 흐림
                     }
                     // 비, 눈 바인딩
                     when (response.body()?.response!!.body.items.item[ptyIdx!!].fcstValue) {
                         "0" -> null
-                        "3" -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_snow) // 3일 때 눈
-                        else -> binding.homeWeatherImageIv.setImageResource(R.drawable.ic_rain) // 1, 2, 4 일 때 눈
+                        "3" -> binding.homeWeatherImageIv.setImageResource(com.example.mudang2.R.drawable.ic_snow) // 3일 때 눈
+                        else -> binding.homeWeatherImageIv.setImageResource(com.example.mudang2.R.drawable.ic_rain) // 1, 2, 4 일 때 눈
                     }
 
                     Log.d("GET/SUCCESSS", response.body()?.response!!.body.items.item[tmpIdx!!].toString()) // SKY // 0  5  6
@@ -201,6 +213,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
                 }
             })
     }
+
     // 가져올 데이터의 날짜 선택
     private fun setHourDate() {
         var currentHour = getCurrentHour()
@@ -543,6 +556,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         }
     }
 
+    // 대기인원 수 조회 실패
     override fun onGetHeadcountFailure(code: Int, message: String) {
         Log.d("[CAMERA] GET / FAILURE", "$code $message")
         binding.homeWaitNumberTv.text = "점검 중"
