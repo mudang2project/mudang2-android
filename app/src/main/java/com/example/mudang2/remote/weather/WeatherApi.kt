@@ -1,4 +1,4 @@
-package com.example.mudang2.remote
+package com.example.mudang2.remote.weather
 
 import com.example.mudang2.ApiKey.Companion.API_KEY
 import retrofit2.Call

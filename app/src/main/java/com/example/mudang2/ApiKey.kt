@@ -2,10 +2,13 @@ package com.example.mudang2
 
 class ApiKey {
     companion object {
-        // 엔드 포인트
+        // 학과 서버 엔드 포인트
+        const val SERVER_URL = "http://210.102.178.97"
+
+        // 기상청 엔드 포인트
         const val BASE_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/"
 
-        // 태그
+        // 테스트 태그
         const val TAG = "TEST"
 
         // 인코딩 키

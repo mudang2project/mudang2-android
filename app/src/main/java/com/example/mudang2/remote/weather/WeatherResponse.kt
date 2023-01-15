@@ -1,4 +1,4 @@
-package com.example.mudang2.remote
+package com.example.mudang2.remote.weather
 
 data class WeatherResponse(
     val response: Response
