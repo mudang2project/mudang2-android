@@ -14,11 +14,11 @@ class GetGpsLocationService {
         this.getLocationView = getLocationView
     }
 
-    fun getLocation(busIdx: Int) {
+    fun getLocation() {
         val status = "server"
         val getGpsLocationService = NetworkModule().getRetrofit(status)?.create(API::class.java)
 
-        getGpsLocationService?.getLocation(busIdx)?.enqueue(object : Callback<GetGpsLocationResponse> {
+        getGpsLocationService?.getLocation()?.enqueue(object : Callback<GetGpsLocationResponse> {
             override fun onResponse(
                 call: Call<GetGpsLocationResponse>,
                 response: Response<GetGpsLocationResponse>

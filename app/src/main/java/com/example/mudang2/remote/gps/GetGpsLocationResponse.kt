@@ -4,7 +4,7 @@ data class GetGpsLocationResponse (
     var isSuccess: Boolean,
     var code: Int,
     var message: String,
-    var result: GpsResult
+    var result: List<GpsResult>
     )
 
 data class GpsResult (

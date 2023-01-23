@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mudang2.R
 import com.example.mudang2.databinding.ActivityMainBinding
 import com.example.mudang2.remote.NetworkModule
 import com.example.mudang2.remote.camera.CameraResult
@@ -46,6 +47,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     private var skyIdx: Int? = null // 하능상태
     private var ptyIdx: Int? = null // 강수상태
 
+    private var marker1 : Marker? = null
+    private var marker2 : Marker? = null
+    private var marker3 : Marker? = null
+    private var marker4 : Marker? = null
+    private var marker5 : Marker? = null
+    private var marker6 : Marker? = null
+
+    private lateinit var bitMarker1: Bitmap
+    private lateinit var bitMarker2: Bitmap
+    private lateinit var bitMarker3: Bitmap
+    private lateinit var bitMarker4: Bitmap
+    private lateinit var bitMarker5: Bitmap
+    private lateinit var bitMarker6: Bitmap
+
     private var cnt: Int? = null // 대기인원 수
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,18 +68,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        drawBitmap()
+
         val display = this.applicationContext?.resources?.displayMetrics
         val deviceWidth = display?.widthPixels
         val deviceHeight = display?.heightPixels
 
         // 네트워크 에러 발생
-        if(!isNetworkAvailable(this)){
-            val networkErrorDialog = NetworkErrorDialog(deviceWidth!!, deviceHeight!!)
-            networkErrorDialog.show(this.supportFragmentManager, "error")
-        }
+        networkError(deviceWidth, deviceHeight)
 
         // 구글맵 초기화
-        val mapFragment = supportFragmentManager.findFragmentById(com.example.mudang2.R.id.home_map) as SupportMapFragment
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.home_map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
 //       // 운행시간 외 CLOSED 페이지 띄우기
@@ -93,9 +107,33 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         thread(start = true) {
             while(true) {
                 getHeadcount.getHeadcount()
+                getGpsLocation.getLocation()
                 Thread.sleep(10000)
             }
         }
+    }
+
+    private fun networkError(deviceWidth: Int?, deviceHeight: Int?) {
+        if (!isNetworkAvailable(this)) {
+            val networkErrorDialog = NetworkErrorDialog(deviceWidth!!, deviceHeight!!)
+            networkErrorDialog.show(this.supportFragmentManager, "error")
+        }
+    }
+
+    private fun drawBitmap() {
+        val bitmapDraw1 = resources.getDrawable(R.drawable.ic_bus_1) as BitmapDrawable
+        val bitmapDraw2 = resources.getDrawable(R.drawable.ic_bus_2) as BitmapDrawable
+        val bitmapDraw3 = resources.getDrawable(R.drawable.ic_bus_3) as BitmapDrawable
+        val bitmapDraw4 = resources.getDrawable(R.drawable.ic_bus_4) as BitmapDrawable
+        val bitmapDraw5 = resources.getDrawable(R.drawable.ic_bus_5) as BitmapDrawable
+        val bitmapDraw6 = resources.getDrawable(R.drawable.ic_bus_bus) as BitmapDrawable
+
+        bitMarker1 = Bitmap.createScaledBitmap(bitmapDraw1.bitmap, 60, 100, false)
+        bitMarker2 = Bitmap.createScaledBitmap(bitmapDraw2.bitmap, 60, 100, false)
+        bitMarker3 = Bitmap.createScaledBitmap(bitmapDraw3.bitmap, 60, 100, false)
+        bitMarker4 = Bitmap.createScaledBitmap(bitmapDraw4.bitmap, 60, 100, false)
+        bitMarker5 = Bitmap.createScaledBitmap(bitmapDraw5.bitmap, 60, 100, false)
+        bitMarker6 = Bitmap.createScaledBitmap(bitmapDraw6.bitmap, 60, 100, false)
     }
 
     // 네트워크 확인 함수
@@ -128,14 +166,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val latLng = LatLng(37.4525, 127.1312)
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
-
-        // 비트맵 아이콘 크기 조절
-        val bitmapDraw = resources.getDrawable(com.example.mudang2.R.drawable.ic_bus_1) as BitmapDrawable
-        val b = bitmapDraw.bitmap
-        val smallMarker = Bitmap.createScaledBitmap(b, 60, 100, false)
-
-        var marker1 : Marker = mMap.addMarker(MarkerOptions().position(LatLng(37.4519, 127.1312)))!!
-        marker1!!.setIcon(BitmapDescriptorFactory.fromBitmap(smallMarker))
 
         val polyline = mMap.addPolyline(PolylineOptions()
             .clickable(false)
@@ -231,7 +261,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
             getCurrentDate(0)
         // baseTime 세팅
         setBaseTime(currentHour.toInt())
-        Log.d("TESTTEST", currentHour)
     }
 
     // 현재 시각 불러오기
@@ -254,140 +283,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
             day = "0$day"
 
         todayDate = year + month + day
-
-        Log.d("TESTTEST", todayDate.toString())
     }
-
-//    // 파이어베이스에 저장된 사람 수 가져오기
-//    private fun getPeopleCnt() {
-//        var cnt: String
-//
-//        cameraRef.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                if (snapshot.exists()) {
-//                    for (data in snapshot.children) {
-//                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
-//                        binding.homeWaitNumberTv.text = "${data.value.toString()}명"
-//
-//                        cnt = data.value.toString()
-//
-//                        if (cnt.toInt() <= 5) {
-//                            binding.homeWaitConditionTv.text = "원활"
-//                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#04D900"))
-//                        }
-//                        else if (cnt.toInt() in 6..15) {
-//                            binding.homeWaitConditionTv.text = "보통"
-//                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF9110"))
-//                        }
-//                        else {
-//                            binding.homeWaitConditionTv.text = "혼잡"
-//                            binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF0000"))
-//                        }
-//                   }
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.d("FIREBASE", error.toString())
-//            }
-//        })
-//    }
-//
-//    // 파이어베이스에 저장된 무당이 위치 가져오기
-//    private var marker1 : Marker? = null
-//    private fun getLocate1() {
-//        gps1Ref.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                if (snapshot.exists()) {
-//                    if (marker1 != null)
-//                        marker1!!.remove()
-//                    for (data in snapshot.children) {
-//                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
-//                        val locate = data.value.toString().split(" ")
-//                        var lat1 = locate[0].toDouble()
-//                        var long1 = locate[1].toDouble()
-//
-//                        marker1 = mMap.addMarker(MarkerOptions().position(LatLng(lat1, long1)))!!
-//                        marker1!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
-//                    }
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.d("FIREBASE", error.toString())
-//            }
-//        })
-//    }
-//
-//    private var marker2 : Marker? = null
-//    private fun getLocate2() {
-//        gps2Ref.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                if (snapshot.exists()) {
-//                    if (marker2 != null)
-//                        marker2!!.remove()
-//                    for (data in snapshot.children) {
-//                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
-//                        val locate = data.value.toString().split(" ")
-//                        var lat2 = locate[0].toDouble()
-//                        var long2 = locate[1].toDouble()
-//
-//                        marker2 = mMap.addMarker(MarkerOptions().position(LatLng(lat2, long2)))!!
-//                        marker2!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
-//                    }
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.d("FIREBASE", error.toString())
-//            }
-//        })
-//    }
-//
-//    private var marker3 : Marker? = null
-//    private fun getLocate3() {
-//        gps3Ref.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                if (snapshot.exists()) {
-//                    if (marker3 != null)
-//                        marker3!!.remove()
-//                    for (data in snapshot.children) {
-//                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
-//                        val locate = data.value.toString().split(" ")
-//                        var lat3 = locate[0].toDouble()
-//                        var long3 = locate[1].toDouble()
-//
-//                        marker3 = mMap.addMarker(MarkerOptions().position(LatLng(lat3, long3)))!!
-//                        marker3!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
-//                    }
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.d("FIREBASE", error.toString())
-//            }
-//        })
-//    }
-//
-//    private var marker4 : Marker? = null
-//    private fun getLocate4() {
-//        gps4Ref.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                if (snapshot.exists()) {
-//                    if (marker4 != null)
-//                        marker4!!.remove()
-//                    for (data in snapshot.children) {
-//                        Log.d("FIREBASE", "ValueEventListener-onDataChange : ${data.value}")
-//                        val locate = data.value.toString().split(" ")
-//                        var lat4 = locate[0].toDouble()
-//                        var long4 = locate[1].toDouble()
-//
-//                        marker4 = mMap.addMarker(MarkerOptions().position(LatLng(lat4, long4)))!!
-//                        marker4!!.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ladybug))
-//                    }
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.d("FIREBASE", error.toString())
-//            }
-//        })
-//    }
 
     private fun setBaseTime(hour: Int){
         when(hour) {
@@ -564,8 +460,68 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     }
 
     // 위도, 경도 조회 성공
-    override fun onGetLocationSuccess(result: GpsResult) {
+    override fun onGetLocationSuccess(result: List<GpsResult>) {
+        Log.d("[GPS] GET / SUCCESS", result.toString())
+        if (marker1 != null)
+            marker1!!.remove()
+        if (marker2 != null)
+            marker2!!.remove()
+        if (marker3 != null)
+            marker3!!.remove()
+        if (marker4 != null)
+            marker4!!.remove()
+        if (marker5 != null)
+            marker5!!.remove()
+        if (marker6 != null)
+            marker6!!.remove()
 
+        if (result[0].lat == "null") {
+            if (marker1 != null)
+                marker1!!.remove()
+        } else {
+            marker1 = mMap.addMarker(MarkerOptions().position(LatLng(result[0].lat.toDouble(), result[0].lon.toDouble())))
+            marker1!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker1))
+        }
+
+        if (result[1].lat == "null") {
+            if (marker2 != null)
+                marker2!!.remove()
+        } else {
+            marker2 = mMap.addMarker(MarkerOptions().position(LatLng(result[1].lat.toDouble(), result[1].lon.toDouble())))
+            marker2!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker2))
+        }
+
+        if (result[2].lat == "null") {
+            if (marker3 != null)
+                marker3!!.remove()
+        } else {
+            marker3 = mMap.addMarker(MarkerOptions().position(LatLng(result[2].lat.toDouble(), result[2].lon.toDouble())))
+            marker3!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker3))
+        }
+
+        if (result[3].lat == "null") {
+            if (marker4 != null)
+                marker4!!.remove()
+        } else {
+            marker4 = mMap.addMarker(MarkerOptions().position(LatLng(result[3].lat.toDouble(), result[3].lon.toDouble())))
+            marker4!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker4))
+        }
+
+        if (result[4].lat == "null") {
+            if (marker5 != null)
+                marker5!!.remove()
+        } else {
+            marker5 = mMap.addMarker(MarkerOptions().position(LatLng(result[4].lat.toDouble(), result[4].lon.toDouble())))
+            marker5!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker5))
+        }
+
+        if (result[5].lat == "null") {
+            if (marker6 != null)
+                marker6!!.remove()
+        } else {
+            marker6 = mMap.addMarker(MarkerOptions().position(LatLng(result[5].lat.toDouble(), result[5].lon.toDouble())))
+            marker6!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker6))
+        }
     }
 
     override fun onGetLocationFailure(code: Int, message: String) {

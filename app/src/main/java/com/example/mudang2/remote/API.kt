@@ -12,6 +12,6 @@ interface API {
     fun getHeadcount() : Call<GetCameraHeadcountResponse>
 
     // 위치정보(위도, 경도) 가져오기
-    @GET("/gps/location/{busIdx}")
-    fun getLocation(@Path("busIdx") busIdx: Int) : Call<GetGpsLocationResponse>
+    @GET("/gps/location")
+    fun getLocation() : Call<GetGpsLocationResponse>
 }
