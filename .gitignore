@@ -14,3 +14,6 @@
 .cxx
 local.properties
 /app/src/main/java/com/example/mudang2/ApiKey.kt
+/app/src/main/AndroidManifest.xml
+mudang2.jks
+/app/release
