@@ -30,6 +30,7 @@
         app:layout_constraintStart_toEndOf="@+id/home_gc_logo_iv"
         app:layout_constraintTop_toTopOf="@+id/home_gc_logo_iv" />
 
+
     <ImageButton
         android:id="@+id/home_info_ib"
         android:layout_width="35dp"
@@ -195,7 +196,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/pretendard_medium"
-                android:text=""
+                android:text="불러오는 중"
                 android:textColor="@color/black"
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="@+id/home_weather_image_iv"
