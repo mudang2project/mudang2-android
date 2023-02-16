@@ -17,3 +17,4 @@ local.properties
 /app/src/main/AndroidManifest.xml
 mudang2.jks
 /app/release
+google-services.json
