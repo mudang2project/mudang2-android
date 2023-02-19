@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     private lateinit var bitMarker4: Bitmap
     private lateinit var bitMarker5: Bitmap
     private lateinit var bitMarker6: Bitmap
+    private lateinit var bitMarker7: Bitmap
 
     private var cnt: Int? = null // 대기인원 수
 
@@ -92,17 +93,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val mapFragment = supportFragmentManager.findFragmentById(R.id.home_map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        // 운행시간 외 CLOSED 페이지 띄우기
+        if (nowTime !in 8..18) {
+            binding.homeClosedPageCl.visibility = View.VISIBLE
+        }
+
         // 기상청 api 연동 날씨 가져오기
         // Base_time : 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300 (1일 8회)
         weatherStatus(
             "JSON", 36, 1,
             todayDate!!, baseTime!!, 62, 124
         )
-
-        // 운행시간 외 CLOSED 페이지 띄우기
-        if (nowTime !in 8..18) {
-            binding.homeClosedPageCl.visibility = View.VISIBLE
-        }
 
         // 정류장 대기인원 수 api 연동
         val getHeadcount = GetCameraHeadcountService()
@@ -113,11 +114,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
 
         // 대기인원 수 호출 쓰레드
         thread(start = true) {
-            while(true) {
-                getGpsLocation.getLocation()
-                Thread.sleep(3000)
-                getHeadcount.getHeadcount()
-                Thread.sleep(3000)
+            if (nowTime in 8..18) {
+                while(true) {
+                    getGpsLocation.getLocation()
+                    Thread.sleep(3000)
+                    getHeadcount.getHeadcount()
+                    Thread.sleep(3000)
+                }
             }
         }
 
@@ -141,6 +144,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val bitmapDraw4 = resources.getDrawable(R.drawable.ic_bus_4) as BitmapDrawable
         val bitmapDraw5 = resources.getDrawable(R.drawable.ic_bus_5) as BitmapDrawable
         val bitmapDraw6 = resources.getDrawable(R.drawable.ic_bus_bus) as BitmapDrawable
+        val bitmapDrawBusStop1 = resources.getDrawable(R.drawable.ic_bus_stop) as BitmapDrawable
 
         bitMarker1 = Bitmap.createScaledBitmap(bitmapDraw1.bitmap, 60, 100, false)
         bitMarker2 = Bitmap.createScaledBitmap(bitmapDraw2.bitmap, 60, 100, false)
@@ -148,6 +152,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         bitMarker4 = Bitmap.createScaledBitmap(bitmapDraw4.bitmap, 60, 100, false)
         bitMarker5 = Bitmap.createScaledBitmap(bitmapDraw5.bitmap, 60, 100, false)
         bitMarker6 = Bitmap.createScaledBitmap(bitmapDraw6.bitmap, 100, 50, false)
+        bitMarker7 = Bitmap.createScaledBitmap(bitmapDrawBusStop1.bitmap, 60, 95, false)
     }
 
     // 네트워크 확인 함수
@@ -175,11 +180,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     // 구글맵 API
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
         // 학교 초기 위치 설정
         val latLng = LatLng(37.4525, 127.1312)
         // 카메라 이동
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.5f))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.8f))
+
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4510,127.1274)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4553,127.1346)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
 
         val polyline = mMap.addPolyline(PolylineOptions()
             .clickable(false)
@@ -451,11 +458,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     // 대기인원 수 조회 성공
     override fun onGetHeadcountSuccess(result: CameraResult) {
         cnt = result.headCount
+
         if (result.interval >= 60) {
+            binding.homeWaitNumberTv.textSize = 25F
             binding.homeWaitNumberTv.text = "점검 중"
             binding.homeWaitConditionTv.text = ""
-        }
-        else {
+        } else {
+            binding.homeWaitNumberTv.textSize = 25F
             binding.homeWaitNumberTv.text = "${cnt.toString()}명"
 
             if (cnt!! <= 5) {
@@ -469,11 +478,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
                 binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF0000"))
             }
         }
+
     }
 
     // 대기인원 수 조회 실패
     override fun onGetHeadcountFailure(code: Int, message: String) {
         Log.d("[CAMERA] GET / FAILURE", "$code $message")
+        binding.homeWaitNumberTv.textSize = 25F
         binding.homeWaitNumberTv.text = "점검 중"
         binding.homeWaitConditionTv.text = ""
     }
@@ -481,7 +492,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     // 위도, 경도 조회 성공
     override fun onGetLocationSuccess(result: List<GpsResult>) {
         Log.d("[GPS] GET / SUCCESS", result.toString())
-
         // 움직일 때마다 마커 초기화
         if (marker1 != null)
             marker1!!.remove()
