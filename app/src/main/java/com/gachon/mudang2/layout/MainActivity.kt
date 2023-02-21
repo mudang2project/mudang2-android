@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         }
 
         binding.homeInfoIb.setOnClickListener {
-            var intent = Intent(Intent.ACTION_VIEW, Uri.parse(SERVER_URL))
+            var intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://mudang.gachon.ac.kr"))
             startActivity(intent)
         }
     }
@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.8f))
 
-        mMap.addMarker(MarkerOptions().position(LatLng(37.4510,127.1274)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4509,127.1274)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
         mMap.addMarker(MarkerOptions().position(LatLng(37.4553,127.1346)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
 
         val polyline = mMap.addPolyline(PolylineOptions()

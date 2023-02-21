@@ -4,10 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".layout.MainActivity"
     android:background="@color/background"
     android:paddingHorizontal="20dp"
-    android:paddingTop="35dp">
+    android:paddingTop="37dp"
+    tools:context=".layout.MainActivity">
 
     <ImageView
         android:id="@+id/home_gc_logo_iv"
@@ -21,11 +21,11 @@
         android:id="@+id/home_title_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:fontFamily="@font/pretendard_bold"
         android:text="@string/app_name"
         android:textColor="@color/gachon"
         android:textSize="20sp"
-        android:layout_marginStart="10dp"
         app:layout_constraintBottom_toBottomOf="@+id/home_gc_logo_iv"
         app:layout_constraintStart_toEndOf="@+id/home_gc_logo_iv"
         app:layout_constraintTop_toTopOf="@+id/home_gc_logo_iv" />
@@ -41,8 +41,8 @@
         app:layout_constraintTop_toTopOf="@+id/home_gc_logo_iv" />
 
     <fragment
-        class="com.google.android.gms.maps.SupportMapFragment"
         android:id="@+id/home_map"
+        class="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="450dp"
         android:layout_marginTop="10dp"
@@ -56,8 +56,8 @@
         android:layout_width="match_parent"
         android:layout_height="450dp"
         android:layout_marginTop="10dp"
-        android:visibility="invisible"
         android:background="@color/white"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/home_gc_logo_iv">
@@ -81,8 +81,8 @@
             android:layout_marginTop="5dp"
             android:fontFamily="@font/pretendard_medium"
             android:text="운영시간\n(08:30 ~ 17:30)"
-            android:textSize="18dp"
             android:textAlignment="center"
+            android:textSize="18dp"
             app:layout_constraintEnd_toEndOf="@+id/textView"
             app:layout_constraintStart_toStartOf="@+id/textView"
             app:layout_constraintTop_toBottomOf="@+id/textView" />
@@ -125,9 +125,9 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/pretendard_medium"
                 android:text="운영시간\n(08:30 ~ 17:30)"
+                android:textAlignment="center"
                 android:textColor="@color/black"
                 android:textSize="18sp"
-                android:textAlignment="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -176,9 +176,9 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/pretendard_medium"
                 android:text="날씨를 불러올 수 없습니다"
+                android:textAlignment="center"
                 android:textColor="@color/black"
                 android:textSize="20sp"
-                android:textAlignment="center"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -210,5 +210,16 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:fontFamily="@font/pretendard_medium"
+        android:textSize="13sp"
+        android:text="가천대 제공 v1.0.3"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
