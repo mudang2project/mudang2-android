@@ -217,7 +217,7 @@
         android:layout_marginBottom="5dp"
         android:fontFamily="@font/pretendard_medium"
         android:textSize="13sp"
-        android:text="가천대 제공 v1.0.3"
+        android:text="가천대 제공 v1.0.4"
         android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

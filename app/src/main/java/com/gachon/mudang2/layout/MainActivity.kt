@@ -64,8 +64,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
     private lateinit var bitMarker5: Bitmap
     private lateinit var bitMarker6: Bitmap
     private lateinit var bitMarker7: Bitmap
+    private lateinit var bitMarker8: Bitmap
 
     private var cnt: Int? = null // 대기인원 수
+
+    private val cal: Calendar = Calendar.getInstance()
+    private val nWeek: Int = cal.get(Calendar.DAY_OF_WEEK)
 
     override fun onStop() {
         super.onStop()
@@ -94,7 +98,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         mapFragment.getMapAsync(this)
 
         // 운행시간 외 CLOSED 페이지 띄우기
-        if (nowTime !in 8..18) {
+
+        if (nowTime !in 8..17 || nWeek == 1 || nWeek == 7) {
             binding.homeClosedPageCl.visibility = View.VISIBLE
         }
 
@@ -112,14 +117,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val getGpsLocation = GetGpsLocationService()
         getGpsLocation.setLocationView(this)
 
-        // 대기인원 수 호출 쓰레드
+        // api 호출 쓰레드
         thread(start = true) {
-            if (nowTime in 8..18) {
+            if (nowTime in 8..17 && nWeek != 1 && nWeek != 7) {
                 while(true) {
                     getGpsLocation.getLocation()
-                    Thread.sleep(3000)
+                    Thread.sleep(2000)
                     getHeadcount.getHeadcount()
-                    Thread.sleep(3000)
+                    Thread.sleep(2000)
                 }
             }
         }
@@ -145,6 +150,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         val bitmapDraw5 = resources.getDrawable(R.drawable.ic_bus_5) as BitmapDrawable
         val bitmapDraw6 = resources.getDrawable(R.drawable.ic_bus_bus) as BitmapDrawable
         val bitmapDrawBusStop1 = resources.getDrawable(R.drawable.ic_bus_stop) as BitmapDrawable
+        val bitmapDrawGarage = resources.getDrawable(R.drawable.ic_garage) as BitmapDrawable
 
         bitMarker1 = Bitmap.createScaledBitmap(bitmapDraw1.bitmap, 60, 100, false)
         bitMarker2 = Bitmap.createScaledBitmap(bitmapDraw2.bitmap, 60, 100, false)
@@ -153,6 +159,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         bitMarker5 = Bitmap.createScaledBitmap(bitmapDraw5.bitmap, 60, 100, false)
         bitMarker6 = Bitmap.createScaledBitmap(bitmapDraw6.bitmap, 100, 50, false)
         bitMarker7 = Bitmap.createScaledBitmap(bitmapDrawBusStop1.bitmap, 60, 95, false)
+        bitMarker8 = Bitmap.createScaledBitmap(bitmapDrawGarage.bitmap, 65, 90, false)
     }
 
     // 네트워크 확인 함수
@@ -185,9 +192,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
         // 카메라 이동
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.8f))
 
-        mMap.addMarker(MarkerOptions().position(LatLng(37.4509,127.1274)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
-        mMap.addMarker(MarkerOptions().position(LatLng(37.4553,127.1346)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
-
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4509, 127.1274)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4553, 127.1346)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker7))
+        mMap.addMarker(MarkerOptions().position(LatLng(37.4494, 127.1280)))!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitMarker8))
         val polyline = mMap.addPolyline(PolylineOptions()
             .clickable(false)
             .add(
@@ -212,6 +219,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
             ))
         polyline.color = -0x009999
         polyline.tag = "route"
+
+        val polyline2 = mMap.addPolyline(PolylineOptions()
+            .clickable(false)
+            .add(
+                LatLng(37.4501, 127.1292),
+                LatLng(37.4499, 127.1299),
+                LatLng(37.4507, 127.1302)
+            ))
+        polyline2.color = -0x999999
+        polyline2.width = 22f
+        polyline2.tag = "tunnel"
+
+        val polyline3 = mMap.addPolyline(PolylineOptions()
+            .clickable(false)
+            .add(
+                LatLng(37.450483, 127.1279),
+                LatLng(37.4494, 127.1279),
+            ))
+        polyline3.color = -0x009999
+        polyline3.width = 8f
+        polyline3.tag = "garage"
     }
 
     // 날씨 연동 API
@@ -465,7 +493,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
             binding.homeWaitConditionTv.text = ""
         } else {
             binding.homeWaitNumberTv.textSize = 25F
-            binding.homeWaitNumberTv.text = "${cnt.toString()}명"
+            if (cnt!! >= 20)
+                binding.homeWaitNumberTv.text = "20명 이상"
+            else
+                binding.homeWaitNumberTv.text = "${cnt.toString()}명"
 
             if (cnt!! <= 5) {
                 binding.homeWaitConditionTv.text = "원활"
@@ -478,7 +509,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GetCameraHeadcount
                 binding.homeWaitConditionTv.setTextColor(Color.parseColor("#FF0000"))
             }
         }
-
     }
 
     // 대기인원 수 조회 실패
